@@ -1,6 +1,6 @@
 function [strarray] = data2orgtable(data, labels_row, labels_col, str_format)
 
-if ni == 3
+if nargin == 3
   str_format = ' %.1f ';
 end
 
