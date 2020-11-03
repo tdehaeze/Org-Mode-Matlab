@@ -1,1 +1,116 @@
 #+TITLE: Toolbox to use OrgBabel with Matlab
+
+* =whos= for Emacs
+:PROPERTIES:
+:header-args:matlab+: :tangle src/whosEmacs.m
+:END:
+#+begin_src matlab
+  function whosEmacs(variable)
+    disp('<EMACSCAP>(*MATLAB Whos*)');
+    try
+      if nargin == 1 && ischar(variable)
+        evalin('base', ['whos ', variable]);
+      else
+        evalin('base', 'whos');
+      end
+    catch ERR
+        disp(ERR)
+    end
+    disp('</EMACSCAP>');
+  end
+#+end_src
+
+* =eval= for Emacs
+:PROPERTIES:
+:header-args:matlab+: :tangle src/evalEmacs.m
+:END:
+#+begin_src matlab
+  function evalEmacs(command)
+    if nargin == 1 && ischar(command)
+      disp(['<EMACSCAP>(*' command '*)']);
+      try
+        evalin('base', command);
+      catch ERR
+        disp(ERR)
+      end
+      disp('</EMACSCAP>');
+  end
+#+end_src
+
+* =data2orgtable=
+:PROPERTIES:
+:header-args:matlab+: :tangle src/data2orgtable.m
+:END:
+
+** Documentation
+#+begin_src matlab
+  function [strarray] = data2orgtable(data, labels_row, labels_col, str_format)
+#+end_src
+
+** Initialize parameters
+#+begin_src matlab
+  if nargin == 3
+    str_format = ' %.1f ';
+  end
+
+  strarray = '';
+#+end_src
+
+** Main algorithm
+*** One label for each row and each column
+#+begin_src matlab
+  if length(labels_col) == size(data, 2) && length(labels_row) == size(data, 1)
+    strarray = [strarray, ' | ', strjoin(labels_col, ' | '), sprintf('\n')];
+    for rowi = 1:size(data, 1)
+      strarray = [strarray, labels_row{rowi}, ' | ', strjoin(strsplit(num2str(data(rowi, :), str_format)), ' | '), sprintf('\n')];
+    end
+#+end_src
+
+*** First columns label corresponds to the label for the rows
+#+begin_src matlab
+  elseif length(labels_col) == size(data, 2)+1  && length(labels_row) == size(data, 1)
+    strarray = [strarray, strjoin(labels_col, ' | '), sprintf('\n')];
+    for rowi = 1:size(data, 1)
+      strarray = [strarray, labels_row{rowi}, ' | ', strjoin(strsplit(num2str(data(rowi, :), str_format)), ' | '), sprintf('\n')];
+    end
+#+end_src
+
+*** Labels only for the columns
+#+begin_src matlab
+  elseif length(labels_col) == size(data, 2) && length(labels_row) == 0
+    strarray = [strarray, strjoin(labels_col, ' | '), sprintf('\n')];
+    for rowi = 1:size(data, 1)
+      strarray = [strarray, strjoin(strsplit(num2str(data(rowi, :), str_format)), ' | '), sprintf('\n')];
+    end
+#+end_src
+
+*** First row label corresponds to the label for the columns
+#+begin_src matlab
+  elseif length(labels_row) == size(data, 1)+1  && length(labels_col) == size(data, 2)
+    strarray = [strarray, labels_row{1}, ' | ', strjoin(labels_col, ' | '), sprintf('\n')];
+    for rowi = 1:size(data, 1)
+      strarray = [strarray, labels_row{rowi+1}, ' | ', strjoin(strsplit(num2str(data(rowi, :), str_format)), ' | '), sprintf('\n')];
+    end
+#+end_src
+
+*** Labels only for the rows
+#+begin_src matlab
+  elseif length(labels_row) == size(data, 1) && length(labels_col) == 0
+    for rowi = 1:size(data, 1)
+      strarray = [strarray, labels_row{rowi}, ' | ', strjoin(strsplit(num2str(data(rowi, :), str_format)), ' | '), sprintf('\n')];
+    end
+#+end_src
+
+*** No labels, only data
+#+begin_src matlab
+  elseif length(labels_row) == 0 && length(labels_col) == 0
+    for rowi = 1:size(data, 1)
+      strarray = [strarray, strjoin(strsplit(num2str(data(rowi, :), str_format)), ' | '), sprintf('\n')];
+    end
+  end
+#+end_src
+
+*** Remove the last new line
+#+begin_src matlab
+  strarray(end) = [];
+#+end_src
